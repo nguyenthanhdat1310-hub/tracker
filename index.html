@@ -44,6 +44,9 @@ button{font-family:inherit;cursor:pointer}input,textarea,select{font-family:inhe
 .header .sub{font-size:.72rem;color:var(--text-dim);margin-top:4px}
 .dirty-flag{font-size:.7rem;color:var(--red);margin-top:4px;font-weight:600}
 .saved-flag{font-size:.7rem;color:var(--green);margin-top:4px;font-weight:600}
+.live-clock{font-size:.74rem;color:var(--text-dim);margin-top:5px;font-weight:600;letter-spacing:.3px}
+.live-clock .clock-time{font-size:.9rem;font-weight:800;color:var(--accent);margin-right:6px}
+.live-clock .clock-zone{font-size:.6rem;color:var(--text-muted);background:var(--bg-input);padding:1px 6px;border-radius:8px;margin-left:4px}
 
 .nav{display:flex;gap:4px;justify-content:center;padding:10px 0;position:sticky;top:0;z-index:100;background:var(--bg);flex-wrap:wrap}
 .nav-btn{padding:7px 11px;border:1px solid var(--border);border-radius:22px;font-size:.72rem;font-weight:700;background:var(--bg-card);color:var(--text-dim);transition:all .2s}
@@ -242,6 +245,7 @@ button{font-family:inherit;cursor:pointer}input,textarea,select{font-family:inhe
 <div id="app" style="display:none">
   <header class="header"><h1>THEO DÕI KẾ HOẠCH</h1>
     <div class="sub">Mục tiêu: Giảm cân · Đậu FE Mechanical · Đọc sách</div>
+    <div id="live-clock" class="live-clock"></div>
     <div id="auth-bar" class="auth-bar"></div>
     <div id="dirty-flag"></div></header>
   <nav class="nav" id="nav"></nav>
@@ -895,6 +899,19 @@ function setSnd(v){S.prefs.sound=v;dirty=true;if(v)sndCheck();renderSettings()}
 
 function exportJSON(){const b=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`TheoDoiKeHoach_${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);dirty=false;renderDirty()}
 function importJSON(){const inp=document.createElement("input");inp.type="file";inp.accept=".json";inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.tasks&&d.weeks){if(!d.rules)d.rules=[...DR];if(!d.rewardHistory)d.rewardHistory=[];if(!d.prefs)d.prefs={theme:"light",sound:true};S=d;wI=Math.max(0,S.weeks.length-1);applyTheme();dirty=true;cMsg="✅ Nhập thành công!";render();setTimeout(()=>{cMsg="";renderTracker()},3000)}else alert("File không đúng định dạng!")}catch(err){alert("Lỗi!\n"+err.message)}};r.readAsText(f)};inp.click()}
+
+// ═══════════════════ LIVE CLOCK ═══════════════════
+function updateClock(){
+  const el=document.getElementById("live-clock");if(!el)return;
+  const now=new Date();
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const city=tz.split("/").pop().replace(/_/g," ");
+  const date=now.toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"});
+  const time=now.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false});
+  el.innerHTML=`<span class="clock-time">🕐 ${time}</span> ${date}<span class="clock-zone">📍 ${city}</span>`;
+}
+updateClock();
+setInterval(updateClock,1000);
 
 window.addEventListener("beforeunload",e=>{if(dirty&&!cloudMode){e.preventDefault();e.returnValue=""}});
 // If Firebase is not ready or config is placeholder, auto-skip to offline
